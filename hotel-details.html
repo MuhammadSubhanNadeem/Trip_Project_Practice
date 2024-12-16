@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Naran Kaghan Information System - Hotel Details</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <div class="logo">Naran Kaghan Info</div>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="hotels.html">Hotels</a></li>
+          <li><a href="routes.html">Routes</a></li>
+          <li><a href="trip-planner.html">Trip Planner</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        <div id="loading" class="loading"></div>
+        <div id="hotel-details" class="fade-in" style="display: none"></div>
+        <div id="booking-form" class="fade-in" style="display: none">
+          <h2>Book Your Stay</h2>
+          <form id="hotel-booking-form">
+            <label for="check-in">Check-in Date:</label>
+            <input type="date" id="check-in" name="check-in" required />
+
+            <label for="check-out">Check-out Date:</label>
+            <input type="date" id="check-out" name="check-out" required />
+
+            <label for="room-type">Room Type:</label>
+            <select id="room-type" name="room-type" required></select>
+
+            <label for="guests">Number of Guests:</label>
+            <input type="number" id="guests" name="guests" min="1" required />
+
+            <button type="submit" class="btn">Book Now</button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2023 Naran Kaghan Information System. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const loading = document.getElementById("loading");
+        const hotelDetails = document.getElementById("hotel-details");
+        const bookingForm = document.getElementById("booking-form");
+        const roomTypeSelect = document.getElementById("room-type");
+        try {
+          let url = new URLSearchParams(window.location.search);
+          let hotel_id_num = url.get("hotel_id");
+          console.log(hotel_id_num);
+          let hotel_detail_req = await fetch(
+            `./php/hotel_data.php?action=hotel_detail&hotel_id=${hotel_id_num}`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+          let hotel_detail_res = await hotel_detail_req.json();
+          console.log(hotel_detail_res);
+          // console.log(hotel_detail_res.hotel_detail.map((facility) => facility.facilitie_name.split(",").map((each_facilit) => `<li>${each_facilit}</li>`).join("")).join(""));
+          loading.style.display = "none";
+          hotelDetails.style.display = "block";
+          hotelDetails.style.display = "block";
+          bookingForm.style.display = "block";
+          hotelDetails.innerHTML = `
+                 <h1>${hotel_detail_res.hotel_detail[0].hotel_name}</h1>
+                 <div class="hotel-images">
+                    <img src='./assets/images/1.jpg' alt='Hotel Pic'/>
+                    <img src='./assets/images/hero_1.jpg' alt='Hotel Pic'/>
+                 </div>
+                 <p>Location: ${
+                   hotel_detail_res.hotel_detail[0].hotel_location
+                 }</p>
+                 <p>Description: ${
+                   hotel_detail_res.hotel_detail[0].hotel_disc
+                 }</p>
+                 <h2>Facilities</h2>
+                 <ul>
+                     ${hotel_detail_res.hotel_detail
+                       .map((facility, index) =>
+                         index === 0
+                           ? facility.facilitie_name
+                               .split(",")
+                               .map(
+                                 (each_facilit) => `<li>${each_facilit}</li>`
+                               )
+                               .join("")
+                           : ""
+                       )
+                       .join("")}
+                 </ul>
+                 <h2>Room Types</h2>
+                 ${hotel_detail_res.hotel_detail
+                   .map(
+                     (room) => `
+                     <div class="card">
+                         <h3>${room.room_type}</h3>
+                         <p>${room.room_disc}</p>
+                         <p>Price: $${620} per night</p>
+                     </div>
+                 `
+                   )
+                   .join("")}
+                 <p>Sustainability Score: ${hotel_detail_res.hotel_detail
+                   .map((each, idx) => {
+                     if (idx === 0) {
+                       return each.facility_score_sustaniablity;
+                     }
+                   })
+                   .join("")}/10</p>
+             `;
+
+          hotel_detail_res.hotel_detail.forEach((room) => {
+            const option = document.createElement("option");
+            option.value = room.hotel_type_id;
+            option.textContent = `${room.room_type}/night`;
+            // option.textContent = `${room.room_type} - $${room.price}/night`;            
+            roomTypeSelect.appendChild(option);
+          });
+          document
+            .getElementById("hotel-booking-form")
+            .addEventListener("submit", async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const bookingData = Object.fromEntries(formData);
+              bookingData.hotel_id_num = hotel_id_num;
+
+              try {
+                // const response = await fetchData('/api/book-hotel', {
+                //     method: 'POST',
+                //     body: JSON.stringify(bookingData),
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //     }
+                // });
+
+                alert(
+                  `Booking successful! Confirmation number: ${Math.floor(
+                    Math.random() * 101
+                  )}`
+                );
+              } catch (error) {
+                console.error("Error booking hotel:", error);
+                alert("Error booking hotel. Please try again.");
+              }
+            });
+        } catch (error) {
+          console.log(error);
+          loading.style.display = "none";
+          hotelDetails.innerHTML =
+            "<p>Error loading hotel details. Please try again later.</p>";
+        }
+        // const loading = document.getElementById('loading');
+        // const hotelDetails = document.getElementById('hotel-details');
+        // const bookingForm = document.getElementById('booking-form');
+        // const roomTypeSelect = document.getElementById('room-type');
+
+        // const urlParams = new URLSearchParams(window.location.search);
+        // const hotelId = urlParams.get('id');
+
+        // try {
+        //     const hotel = await fetchData(`/api/hotels/${hotelId}`);
+        //     loading.style.display = 'none';
+        //     hotelDetails.style.display = 'block';
+        //     bookingForm.style.display = 'block';
+
+        //     hotelDetails.innerHTML = `
+        //         <h1>${hotel.name}</h1>
+        //         <div class="hotel-images">
+        //             ${hotel.images.map(img => `<img src="${img}" alt="${hotel.name}">`).join('')}
+        //         </div>
+        //         <p>Location: ${hotel.location}</p>
+        //         <p>Description: ${hotel.description}</p>
+        //         <h2>Facilities</h2>
+        //         <ul>
+        //             ${hotel.facilities.map(facility => `<li>${facility}</li>`).join('')}
+        //         </ul>
+        //         <h2>Room Types</h2>
+        //         ${hotel.roomTypes.map(room => `
+        //             <div class="card">
+        //                 <h3>${room.name}</h3>
+        //                 <p>${room.description}</p>
+        //                 <p>Price: $${room.price} per night</p>
+        //             </div>
+        //         `).join('')}
+        //         <p>Sustainability Score: ${hotel.sustainabilityScore}/10</p>
+        //     `;
+
+        //     hotel.roomTypes.forEach(room => {
+        //         const option = document.createElement('option');
+        //         option.value = room.id;
+        //         option.textContent = `${room.name} - $${room.price}/night`;
+        //         roomTypeSelect.appendChild(option);
+        //     });
+
+        //     document.getElementById('hotel-booking-form').addEventListener('submit', async (e) => {
+        //         e.preventDefault();
+        //         const formData = new FormData(e.target);
+        //         const bookingData = Object.fromEntries(formData);
+        //         bookingData.hotelId = hotelId;
+
+        //         try {
+        //             const response = await fetchData('/api/book-hotel', {
+        //                 method: 'POST',
+        //                 body: JSON.stringify(bookingData),
+        //                 headers: {
+        //                     'Content-Type': 'application/json'
+        //                 }
+        //             });
+
+        //             alert(`Booking successful! Confirmation number: ${response.confirmationNumber}`);
+        //         } catch (error) {
+        //             console.error('Error booking hotel:', error);
+        //             alert('Error booking hotel. Please try again.');
+        //         }
+        //     });
+        // } catch (error) {
+        //     console.error('Error fetching hotel details:', error);
+        //     loading.style.display = 'none';
+        //     hotelDetails.innerHTML = '<p>Error loading hotel details. Please try again later.</p>';
+        //     hotelDetails.style.display = 'block';
+        // }
+      });
+    </script>
+  </body>
+</html>

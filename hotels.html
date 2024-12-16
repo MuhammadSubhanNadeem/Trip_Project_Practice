@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Naran Kaghan Information System - Hotels</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <div class="logo">Naran Kaghan Info</div>
+        <ul>
+          <li><a href="./index.html">Home</a></li>
+          <li><a href="./hotels.html">Hotels</a></li>
+          <li><a href="./routes.html">Routes</a></li>
+          <li><a href="./trip-planner.html">Trip Planner</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        <h1>Hotels in Naran Kaghan</h1>
+        <div id="loading" class="loading"></div>
+        <div id="hotel-list" class="fade-in" style="display: none"></div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2023 Naran Kaghan Information System. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const loading = document.getElementById("loading");
+        const hotelList = document.getElementById("hotel-list");
+        try {
+          let fetch_hotel_data_req = await fetch(
+            "./php/hotel_data.php?action=hotel_data",
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+          let fetch_hotel_data_res = await fetch_hotel_data_req.json();
+          console.log(fetch_hotel_data_res);
+          loading.style.display = "none";
+          hotelList.style.display = "block";
+          fetch_hotel_data_res["hotel_data"].forEach((hotel_data) => {
+            const hotelCard = document.createElement("div");
+            hotelCard.className = "card fade-in";
+            hotelCard.innerHTML = `
+                        <h2>${hotel_data.hotel_name}</h2>
+                        <p>Location: ${hotel_data.hotel_location}</p>
+                        <p>Facilities: ${hotel_data.facilitie_name}</p>
+                        <p>Price Range: $${hotel_data.hotel_price_min} - $${
+                            hotel_data.hotel_price_max
+            }</p>
+                        <p>Sustainability Score: ${
+                            hotel_data.facility_score_sustaniablity
+                        }/10</p>
+                        <a href="hotel-details.html?hotel_id=${
+                            hotel_data.hotel_type_id
+                        }" class="btn">View Details</a>
+                    `;
+            hotelList.appendChild(hotelCard);
+          });
+        } catch (error) {
+          console.log(error);
+        }
+
+        // const loading = document.getElementById('loading');
+        // const hotelList = document.getElementById('hotel-list');
+
+        // try {
+        //     const hotels = await fetchData('/api/hotels');
+        //     console.log(hotels);
+
+        //     loading.style.display = 'none';
+        //     hotelList.style.display = 'block';
+
+        //     hotels.forEach(hotel => {
+        //         const hotelCard = document.createElement('div');
+        //         hotelCard.className = 'card fade-in';
+        //         hotelCard.innerHTML = `
+        //             <h2>${hotel.name}</h2>
+        //             <p>Location: ${hotel.location}</p>
+        //             <p>Facilities: ${hotel.facilities.join(', ')}</p>
+        //             <p>Price Range: $${hotel.priceRange.min} - $${hotel.priceRange.max}</p>
+        //             <p>Sustainability Score: ${hotel.sustainabilityScore}/10</p>
+        //             <a href="hotel-details.html?id=${hotel.id}" class="btn">View Details</a>
+        //         `;
+        //         hotelList.appendChild(hotelCard);
+        //     });
+        // } catch (error) {
+        //     console.error('Error fetching hotels:', error);
+        //     loading.style.display = 'none';
+        //     hotelList.innerHTML = '<p>Error loading hotels. Please try again later.</p>';
+        //     hotelList.style.display = 'block';
+        // }
+      });
+    </script>
+  </body>
+</html>

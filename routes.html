@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Naran Kaghan Information System - Routes</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <div class="logo">Naran Kaghan Info</div>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="hotels.html">Hotels</a></li>
+          <li><a href="routes.html">Routes</a></li>
+          <li><a href="trip-planner.html">Trip Planner</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        <h1>Scenic Routes in Naran Kaghan</h1>
+        <div id="loading" class="loading"></div>
+        <div id="route-list" class="fade-in" style="display: none"></div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2023 Naran Kaghan Information System. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const loading = document.getElementById("loading");
+        const routeList = document.getElementById("route-list");
+
+        try {
+          const routes_req = await fetch(
+            "./php/hotel_data.php?action=route_data"
+          );
+          let routes_res = await routes_req.json();
+          console.log(routes_res);
+          loading.style.display = "none";
+          routeList.style.display = "block";
+
+          routes_res.route_data.forEach((route) => {
+            const routeCard = document.createElement("div");
+            routeCard.className = "card fade-in";
+            routeCard.innerHTML = `
+                        <h2>${route.route_name}</h2>
+                        <p>Start: ${route.route_from}</p>
+                        <p>End: ${route.route_to}</p>
+                        <p>Distance: ${route.route_distance} km</p>
+                        <p>Key Attractions: ${route.route_key_attraction}</p>
+                        <p>Current Weather: ${route.route_weather_temp}°C, ${route.route_weather_condition}</p>
+                    `;
+            routeList.appendChild(routeCard);
+          });
+        } catch (error) {
+          console.error("Error fetching routes:", error);
+          loading.style.display = "none";
+          routeList.style.display = "block";
+          routeList.innerHTML =
+            "<p>Error loading routes. Please try again later.</p>";
+        }
+        // const loading = document.getElementById('loading');
+        // const routeList = document.getElementById('route-list');
+
+        // try {
+        //     const routes = await fetchData('/api/routes');
+        //     loading.style.display = 'none';
+        //     routeList.style.display = 'block';
+
+        //     routes.forEach(route => {
+        //         const routeCard = document.createElement('div');
+        //         routeCard.className = 'card fade-in';
+        //         routeCard.innerHTML = `
+        //             <h2>${route.name}</h2>
+        //             <p>Start: ${route.startPoint}</p>
+        //             <p>End: ${route.endPoint}</p>
+        //             <p>Distance: ${route.distance} km</p>
+        //             <p>Key Attractions: ${route.attractions.join(', ')}</p>
+        //             <p>Current Weather: ${route.weather.temperature}°C, ${route.weather.condition}</p>
+        //         `;
+        //         routeList.appendChild(routeCard);
+        //     });
+        // } catch (error) {
+        //     console.error('Error fetching routes:', error);
+        //     loading.style.display = 'none';
+        //     routeList.innerHTML = '<p>Error loading routes. Please try again later.</p>';
+        //     routeList.style.display = 'block';
+        // }
+      });
+    </script>
+  </body>
+</html>

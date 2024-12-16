@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Naran Kaghan Information System - Trip Planner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <div class="logo">Naran Kaghan Info</div>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="hotels.html">Hotels</a></li>
+          <li><a href="routes.html">Routes</a></li>
+          <li><a href="trip-planner.html">Trip Planner</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        <div id="loading" class="loading"></div>
+        <div id="trip-planner-content" class="fade-in" style="display: none">
+          <h1>Plan Your Trip</h1>
+          <form id="trip-planner-form" class="styled-form">
+            <div class="form-group">
+              <label for="hotel">Select Hotel:</label>
+              <select id="hotel" name="hotel" required></select>
+            </div>
+
+            <div class="form-group">
+              <label for="room-type">Room Type:</label>
+              <select id="room-type" name="room-type" required disabled>
+                <option value="">Select a hotel first</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="route">Select Route:</label>
+              <select id="route" name="route" required></select>
+            </div>
+
+            <div class="form-group">
+              <label for="nights">Number of Nights:</label>
+              <input type="number" id="nights" name="nights" min="1" required />
+            </div>
+
+            <div class="form-group">
+              <label for="fuel-price">Fuel Price per km (PKR):</label>
+              <input
+                type="number"
+                id="fuel-price"
+                name="fuel-price"
+                step="0.01"
+                required
+              />
+            </div>
+
+            <button type="submit" class="btn">Calculate Cost</button>
+          </form>
+
+          <div id="hotel-details" class="card" style="display: none"></div>
+          <div id="cost-preview" class="card" style="display: none">
+            <h2>Estimated Cost</h2>
+            <p>Hotel: <span id="hotel-cost"></span> PKR</p>
+            <p>Fuel: <span id="fuel-cost"></span> PKR</p>
+            <p>Total: <span id="total-cost"></span> PKR</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2023 Naran Kaghan Information System. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const loading = document.getElementById("loading");
+        const content = document.getElementById("trip-planner-content");
+        const hotelSelect = document.getElementById("hotel");
+        const roomTypeSelect = document.getElementById("room-type");
+        const routeSelect = document.getElementById("route");
+        const form = document.getElementById("trip-planner-form");
+        const costPreview = document.getElementById("cost-preview");
+        const hotelDetails = document.getElementById("hotel-details");
+        const stay_night = document.getElementById("nights");
+        const fuel_price = document.getElementById("fuel-price");
+
+        try {
+          // const [hotels, routes] = await Promise.all([
+          //     fetchData('/api/hotels'),
+          //     fetchData('/api/routes')
+          // ]);
+          let hotel_route_data_req = await fetch(
+            "./php/hotel_data.php?action=hotel_route_all_data",
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+          let hotel_route_data_res = await hotel_route_data_req.json();
+          console.log(hotel_route_data_res);
+          let hotel_name_itr = "A";
+          hotel_route_data_res.total_data.forEach((hotel, idx) => {
+            if (hotel_name_itr !== hotel.facalities_id) {
+              const option = document.createElement("option");
+              option.value = hotel.hotel_type_id;
+              option.textContent = hotel.hotel_name;
+              hotelSelect.appendChild(option);
+              hotel_name_itr = hotel.facalities_id;
+            }
+          });
+
+          hotel_route_data_res.routes_data.forEach((route) => {
+            const option = document.createElement("option");
+            option.value = route.routes_data.route_type_id;
+            option.textContent = route.routes_data.route_name;
+            routeSelect.appendChild(option);
+          });
+
+          loading.style.display = "none";
+          content.style.display = "block";
+          hotelSelect.addEventListener("change", async () => {
+            const selectedHotelId = hotelSelect.value;
+            roomTypeSelect.innerHTML =
+              '<option value="">Select a room type</option>';
+            roomTypeSelect.disabled = true;
+            hotelDetails.style.display = "none";
+
+            if (selectedHotelId) {
+              try {
+                // const [hotel, roomTypes] = await Promise.all([
+                //     fetchData(`/api/hotels/${selectedHotelId}`),
+                //     fetchData(`/api/hotels/${selectedHotelId}/room-types`)
+                // ]);
+                hotel_route_data_res.total_data.forEach((each_hotel) => {
+                  if (selectedHotelId === each_hotel.hotel_type_id) {
+                    hotelDetails.innerHTML = `
+                    <h2>${each_hotel.hotel_name}</h2>
+                    <p>${each_hotel.hotel_disc}</p>
+                    <p>Location: ${each_hotel.hotel_location}</p>
+                    <p>Facilities: ${each_hotel.facilitie_name}</p>
+                    <p>Sustainability Score: ${each_hotel.facility_score_sustaniablity}/10</p>
+                        `;
+                  }
+                });
+                hotelDetails.style.display = "block";
+
+                hotel_route_data_res.total_data.forEach((roomType) => {
+                  if (roomType.hotel_type_id === hotelSelect.value) {
+                    const option = document.createElement("option");
+                    option.value = roomType.hotel_id;
+                    option.textContent = `${roomType.room_type} - $${roomType.room_price}/night`;
+                    roomTypeSelect.appendChild(option);
+                  }
+                });
+                roomTypeSelect.disabled = false;
+              } catch (error) {
+                console.error("Error fetching hotel details:", error);
+                hotelDetails.innerHTML =
+                  "<p>Error loading hotel details. Please try again.</p>";
+                hotelDetails.style.display = "block";
+              }
+            }
+          });
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            //   const formData = new FormData(form);
+            //   const tripData = Object.fromEntries(formData);
+
+            try {
+              // const cost = await fetchData("/api/calculate-cost", {
+              //   method: "POST",
+              //   body: JSON.stringify(tripData),
+              //   headers: {
+              //     "Content-Type": "application/json",
+              //   },
+              // });
+              let hotel_cost = 0;
+              let route_distance = 0;
+              hotel_route_data_res.total_data.forEach((each_hotel_data) => {
+                if (each_hotel_data.hotel_id === roomTypeSelect.value) {
+                  hotel_cost = Number(each_hotel_data.room_price);
+                }
+            });
+            hotel_route_data_res.routes_data.forEach((each_route_data) => {
+                if (each_route_data.routes_data.route_type_id === routeSelect.value) {
+                    route_distance = Number(each_route_data.routes_data.route_distance);
+                }
+              });
+              console.log(route_distance, fuel_price.value);
+              
+              document.getElementById("hotel-cost").textContent = hotel_cost * stay_night.value;
+              document.getElementById("fuel-cost").textContent = route_distance * fuel_price.value;
+              document.getElementById("total-cost").textContent = ((hotel_cost * stay_night.value) + (route_distance * fuel_price.value));
+              costPreview.style.display = "block";
+            } catch (error) {
+              console.error("Error calculating cost:", error);
+              costPreview.innerHTML =
+                "<p>Error calculating cost. Please try again.</p>";
+              costPreview.style.display = "block";
+            }
+          });
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          loading.style.display = "none";
+          content.innerHTML =
+            "<p>Error loading trip planner. Please try again later.</p>";
+          content.style.display = "block";
+        }
+        // const loading = document.getElementById('loading');
+        // const content = document.getElementById('trip-planner-content');
+        // const hotelSelect = document.getElementById('hotel');
+        // const roomTypeSelect = document.getElementById('room-type');
+        // const routeSelect = document.getElementById('route');
+        // const form = document.getElementById('trip-planner-form');
+        // const costPreview = document.getElementById('cost-preview');
+        // const hotelDetails = document.getElementById('hotel-details');
+
+        // try {
+        //     const [hotels, routes] = await Promise.all([
+        //         fetchData('/api/hotels'),
+        //         fetchData('/api/routes')
+        //     ]);
+
+        //     hotels.forEach(hotel => {
+        //         const option = document.createElement('option');
+        //         option.value = hotel.id;
+        //         option.textContent = hotel.name;
+        //         hotelSelect.appendChild(option);
+        //     });
+
+        //     routes.forEach(route => {
+        //         const option = document.createElement('option');
+        //         option.value = route.id;
+        //         option.textContent = route.name;
+        //         routeSelect.appendChild(option);
+        //     });
+
+        //     loading.style.display = 'none';
+        //     content.style.display = 'block';
+        // } catch (error) {
+        //     console.error('Error fetching data:', error);
+        //     loading.style.display = 'none';
+        //     content.innerHTML = '<p>Error loading trip planner. Please try again later.</p>';
+        //     content.style.display = 'block';
+        // }
+
+        // hotelSelect.addEventListener('change', async () => {
+        //     const selectedHotelId = hotelSelect.value;
+        //     roomTypeSelect.innerHTML = '<option value="">Select a room type</option>';
+        //     roomTypeSelect.disabled = true;
+        //     hotelDetails.style.display = 'none';
+
+        //     if (selectedHotelId) {
+        //         try {
+        //             const [hotel, roomTypes] = await Promise.all([
+        //                 fetchData(`/api/hotels/${selectedHotelId}`),
+        //                 fetchData(`/api/hotels/${selectedHotelId}/room-types`)
+        //             ]);
+
+        //             hotelDetails.innerHTML = `
+        //                 <h2>${hotel.name}</h2>
+        //                 <p>${hotel.description}</p>
+        //                 <p>Location: ${hotel.location}</p>
+        //                 <p>Facilities: ${hotel.facilities.join(', ')}</p>
+        //                 <p>Sustainability Score: ${hotel.sustainabilityScore}/10</p>
+        //             `;
+        //             hotelDetails.style.display = 'block';
+
+        //             roomTypes.forEach(roomType => {
+        //                 const option = document.createElement('option');
+        //                 option.value = roomType.id;
+        //                 option.textContent = `${roomType.name} - $${roomType.price}/night`;
+        //                 roomTypeSelect.appendChild(option);
+        //             });
+
+        //             roomTypeSelect.disabled = false;
+        //         } catch (error) {
+        //             console.error('Error fetching hotel details:', error);
+        //             hotelDetails.innerHTML = '<p>Error loading hotel details. Please try again.</p>';
+        //             hotelDetails.style.display = 'block';
+        //         }
+        //     }
+        // });
+
+        // form.addEventListener('submit', async (e) => {
+        //     e.preventDefault();
+        //     const formData = new FormData(form);
+        //     const tripData = Object.fromEntries(formData);
+
+        //     try {
+        //         const cost = await fetchData('/api/calculate-cost', {
+        //             method: 'POST',
+        //             body: JSON.stringify(tripData),
+        //             headers: {
+        //                 'Content-Type': 'application/json'
+        //             }
+        //         });
+
+        //         document.getElementById('hotel-cost').textContent = cost.hotelCost;
+        //         document.getElementById('fuel-cost').textContent = cost.fuelCost;
+        //         document.getElementById('total-cost').textContent = cost.totalCost;
+        //         costPreview.style.display = 'block';
+        //     } catch (error) {
+        //         console.error('Error calculating cost:', error);
+        //         costPreview.innerHTML = '<p>Error calculating cost. Please try again.</p>';
+        //         costPreview.style.display = 'block';
+        //     }
+        // });
+      });
+    </script>
+  </body>
+</html>
